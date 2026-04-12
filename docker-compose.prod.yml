@@ -1,0 +1,57 @@
+version: "3.8"
+
+# Production compose — use this when deploying to a cloud VM
+# Override NAKAMA_HOST with your server's public IP / domain
+
+services:
+  cockroachdb:
+    image: cockroachdb/cockroach:v23.2.0
+    command: start-single-node --insecure --store=attrs=ssd,path=/var/roachdb
+    restart: unless-stopped
+    volumes:
+      - data_roach:/var/roachdb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nakama:
+    build:
+      context: .
+      dockerfile: Dockerfile.nakama
+    restart: unless-stopped
+    depends_on:
+      cockroachdb:
+        condition: service_healthy
+    environment:
+      - NAKAMA_DATABASE_ADDRESS=cockroachdb:26257
+      - NAKAMA_CONSOLE_USERNAME=${NAKAMA_CONSOLE_USERNAME:-admin}
+      - NAKAMA_CONSOLE_PASSWORD=${NAKAMA_CONSOLE_PASSWORD:-changeme}
+    command: >
+      --name nakama1
+      --database.address cockroachdb:26257
+      --runtime.js_entrypoint "index.js"
+      --logger.level INFO
+    ports:
+      - "7349:7349"
+      - "7350:7350"
+      - "7351:7351"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_NAKAMA_HOST:       ${NAKAMA_PUBLIC_HOST:-localhost}
+        VITE_NAKAMA_PORT:       ${NAKAMA_PUBLIC_PORT:-7350}
+        VITE_NAKAMA_SSL:        ${NAKAMA_SSL:-false}
+        VITE_NAKAMA_SERVER_KEY: ${NAKAMA_SERVER_KEY:-defaultkey}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - nakama
+
+volumes:
+  data_roach:

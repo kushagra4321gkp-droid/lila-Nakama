@@ -1,0 +1,23 @@
+# ── Stage 1: Build the TypeScript bundle ─────────────────────────────────────
+FROM node:20-alpine AS builder
+
+WORKDIR /build
+
+COPY nakama/package.json nakama/package-lock.json* ./
+RUN npm install
+
+COPY nakama/ ./
+RUN npm run build
+
+# Output: /build/build/index.js
+
+# ── Stage 2: Nakama runtime image ─────────────────────────────────────────────
+FROM heroiclabs/nakama:3.21.1
+
+# Copy the bundled runtime module
+COPY --from=builder /build/build/index.js /nakama/data/modules/index.js
+
+# Copy config
+COPY nakama/local.yml /nakama/data/local.yml
+
+EXPOSE 7349 7350 7351

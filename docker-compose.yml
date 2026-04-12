@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  # ── CockroachDB (Nakama's database) ─────────────────────────────────────────
+  cockroachdb:
+    image: cockroachdb/cockroach:v23.2.0
+    command: start-single-node --insecure --store=attrs=ssd,path=/var/roachdb
+    restart: unless-stopped
+    volumes:
+      - data_roach:/var/roachdb
+    ports:
+      - "26257:26257"
+      - "8080:8080"      # CockroachDB UI
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Nakama ───────────────────────────────────────────────────────────────────
+  nakama:
+    image: heroiclabs/nakama:3.21.1
+    command: >
+      --name nakama1
+      --database.address cockroachdb:26257
+      --socket.port 7350
+      --console.port 7351
+      --runtime.js_entrypoint "index.js"
+      --logger.level DEBUG
+    depends_on:
+      cockroachdb:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./nakama/build:/nakama/data/modules   # bundled JS goes here
+      - ./nakama/local.yml:/nakama/data/local.yml
+    ports:
+      - "7349:7349"    # gRPC
+      - "7350:7350"    # HTTP API + WebSocket
+      - "7351:7351"    # Nakama Console
+    environment:
+      - NAKAMA_CONSOLE_USERNAME=admin
+      - NAKAMA_CONSOLE_PASSWORD=admin123
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7350/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Frontend dev server ──────────────────────────────────────────────────────
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_NAKAMA_HOST=localhost
+      - VITE_NAKAMA_PORT=7350
+      - VITE_NAKAMA_SSL=false
+      - VITE_NAKAMA_SERVER_KEY=defaultkey
+    depends_on:
+      - nakama
+
+volumes:
+  data_roach:

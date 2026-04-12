@@ -1,0 +1,16 @@
+{
+  "name": "lila-tictactoe-nakama",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npx rollup -c",
+    "watch": "npx rollup -c -w"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.3.0",
+    "rollup": "^3.29.4",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.3.3"
+  }
+}
