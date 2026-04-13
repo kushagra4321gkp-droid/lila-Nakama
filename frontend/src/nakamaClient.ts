@@ -22,11 +22,11 @@ export async function authenticateDevice(username: string): Promise<Session> {
   const session = await nakamaClient.authenticateDevice(deviceId, true);
 
   try {
-    await nakamaClient.updateAccount(session, { username, displayName: username });
+    await nakamaClient.updateAccount(session, { username, display_name: username });
   } catch {
     try {
       const fallback = `${username}${Math.random().toString(36).slice(2, 5)}`;
-      await nakamaClient.updateAccount(session, { username: fallback, displayName: username });
+      await nakamaClient.updateAccount(session, { username: fallback, display_name: username });
     } catch { }
   }
 
@@ -77,13 +77,13 @@ export async function rpcListMatches(session: Session, mode?: "classic" | "timed
 }
 
 export async function rpcGetLeaderboard(session: Session): Promise<any[]> {
-  const res = await nakamaClient.rpc(session, "get_leaderboard", "{}");
+  const res = await nakamaClient.rpc(session, "get_leaderboard", {} as object);
   const d3 = typeof res.payload === 'string' ? JSON.parse(res.payload) : (res.payload ?? {});
   return d3.records ?? [];
 }
 
 export async function rpcGetMyStats(session: Session): Promise<any> {
-  const res = await nakamaClient.rpc(session, "get_my_stats", "{}");
+  const res = await nakamaClient.rpc(session, "get_my_stats", {} as object);
   const d4 = typeof res.payload === 'string' ? JSON.parse(res.payload) : (res.payload ?? {});
   return d4.stats;
 }
