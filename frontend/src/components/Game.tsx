@@ -80,9 +80,10 @@ export default function Game({ session, matchId, username, existingSocket, onBac
           if (mounted) setError("Disconnected from server.");
         };
 
+        console.log('Attempting joinMatch', matchId, 'existingSocket:', !!existingSocket);
         for (let i = 0; i < 3; i++) {
-          try { await socket.joinMatch(matchId); break; }
-          catch (e) { if (i === 2) throw e; await new Promise(r => setTimeout(r, 1000)); }
+          try { await socket.joinMatch(matchId); console.log('joinMatch SUCCESS'); break; }
+          catch (e) { console.error('joinMatch attempt', i, 'failed:', e); if (i === 2) throw e; await new Promise(r => setTimeout(r, 1000)); }
         }
         if (mounted) setPhase("waiting");
 
