@@ -125,7 +125,7 @@ Open **http://localhost:5173** in two browser tabs (or two devices on the same n
 
 ### Nakama Console
 
-Visit **http://localhost:7351** → login with `admin / admin123` to inspect matches, users, leaderboard records, and API logs.
+Visit **http://localhost:7351** → login with `admin / password` to inspect matches, users, leaderboard records, and API logs.
 
 ---
 
